@@ -1,0 +1,281 @@
+---
+output: pdf_document
+---
+```{r message = FALSE, warning = FALSE}
+require("tidyverse")
+require("MASS")
+
+```
+
+
+# Simulations to explore the efficiacy of stepwise regression procedures for variable selection in multiple linear regression models
+
+When building a linear regression model we often need to decide which explanatory variables to include in the model. As discussed in class, this can be a difficult decision and will depend on the purpose of the model. You may have encountered a technique called step-wise regression that is sometimes used to select which variables to include in a regression model. Step-wise regression is an automated procedure where at each step the inclusion of a variable is assessed according to some predefined criterion. The order in which variables are considered and the criterion for inclusion can vary across different step-wise regression methods. Forward step-wise regression starts with an intercept only model and adds variables step by step. Backwards step-wise regression starts with the full model, containing all explanatory variables and deletes variables step by step. Other methods use a combination of both forwards and backwards selection and some consider all possible combinations of subsets of variables. 
+
+In this worksheet we will explore the method of backwards step-wise regression using the stepAIC() function from the MASS package. The measure used to decide whether to retain a variable in the model is the AIC (Akaie's Information Criterion) value which is a penalised measure of model fit given by:
+
+AIC = $2k-2\ln(L)$ 
+where $k$ is the number of parameters in the model and $L$ is the maximum value of the likelihood function of the model.
+
+AIC takes into account the number of explanatory variables as well as the fit of the model. AIC can be used to compare models where the likelihoods are computed on the same data: the model with the lower AIC is considered a better model. In the context of backwards step-wise regression, at each step a variable is dropped and the AIC is calculated for each model, if AIC(larger model) < AIC(smaller model) then the variable is retained. 
+
+Step-wise regression is not recommended for variable selection for several reasons (taken from Harrell 2001) including: 
+
+* $R^2$ values are biased high
+* the standard errors of the parameter estimates are too small
+* the confidence intervals around the parameter estimates are too narrow
+* p-values are too low, (due to multiple comparisons) 
+* parameter estimates are biased away from 0
+
+The problems listed above stem from using data obtained from a random sample to specify a model. We expect variability in our sample estimates for the population regression coefficients. By only retaining coefficients that have reached a specified threshold in one particular sample will bias the selection procedure in the ways described above. See the the step-wise regression section on Canvas for further discussion of the problems associated with this technique and for other simulation studies exploring this topic.
+
+In this worksheet we will investigate the results obtained using the stepAIC() function for model selection by running simulations where the true nature of the relationship between the explanatory variables and the response variable is known. 
+
+
+## Single application of stepAIC()
+  
+We begin by creating a single data set with 20 predictors, 5 of which are linearly related to the outcome $Y$ and 15 of which are noise. An important consideration in regression analysis is the signal to noise ratio i.e. the magnitude of the effect size (the $\beta$ coefficients) to the variance.
+To start, set the $\beta$ coefficients that are linearly related to the outcome to 0.5 and set the variance of the error term to 1.
+We create a data set with 500 observations.
+
+### Data Generation
+
+Let $k$ represent the number of explanatory variables $X_j$  $j = 1...k$   
+Each explanatory variable is drawn from a Standard Normal distribution $X_j \sim N(0,1)$.  
+Let k_ln represent the number of explanatory variables that are linearly
+related to the response variable $Y$.   
+Let B_mag represent the magnitude of the population $\beta$ coefficients that are linearly related to the response $Y$.    
+The $i_{th}$ observation of the response variable is defined to be \[Y_i = \beta_0 + \beta_1X_{i1} + ... + \beta_kX_{ik} + e_i\] where $e_i \sim N(0,1)$  
+
+```{r}
+set.seed(2)  # so can reproduce results
+k = 20   # 20 explanatory variables
+k_ln = 5 # 5 explanatory variables are linearly related to Y
+B_mag = 0.5 # the magnitude of the explanatory variables that are linearly related to Y
+n = 500  # number of observations in data set
+
+
+  #create a vector containing the population beta coefficients
+  B  <- c(rep(B_mag,k_ln),rep(0,k-k_ln))  
+  X  <- matrix(rnorm(n*k), nrow=n) # create the explanatory variables 
+  Y  <- X%*%B + matrix(rnorm(n),nrow=n) # create the response variable 
+
+  # combine the response and explanatory variables in a single dataframe
+  DF <- cbind(Y,X) 
+  DF<-as.data.frame(DF)
+  
+  # assign column names
+  colnames(DF)<-c("Y","X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11",  
+                  "X12","X13","X14","X15","X16","X17","X18","X19","X20")
+ 
+```
+### Stepwise regression
+Next we perform step-wise regression to choose a model. Using the stepAIC() function, a variable is retained if AIC(large model) < AIC(small model), this is equivalent to keeping larger model if the p-value associated with the dropped variable is  less than 0.15
+
+```{r, results= FALSE}
+# Fit linear regression model using all the predictors
+  full_model <- lm(Y ~ .,data = DF)
+
+# the results of the process are stored in step.model  
+step.model<-stepAIC(full_model, direction = "backward")
+
+```
+Let's examine the model selected using stepAIC()
+```{r}
+summary(step.model) 
+```
+
+The model has correctly retained variables $X_1...X_5$ but has incorrectly included variables $X_{12}$ and $X_{17}$. If we examine the estimated coefficients, we see that the estimates for the $\beta$ coefficients ($\beta_1,...\beta_5$) are close to their true value of 0.5 and the estimate for $\beta_{12}$ is 0.08194 and the estimate for $\beta_{17}$ is 0.07035. If we let $T1$ denote the number of variables that were retained incorrectly and $T2$ represent the number of variables that were omitted incorrectly then in this example, $T1 = 2$ and $T2 = 0$.
+
+
+## Multiple data sets to examine the performance of stepAIC() 
+
+In the next section of this worksheet we scale up the number of data sets we create and fit a linear regression model to using the stepAIC() function. The aim is to examine the number of variables that were retained incorrectly ($T1$) and the number of variables that were omitted incorrectly ($T2$) over many repetitions. In addition to increasing the number of repetitions, we will explore the impact of varying:  
+(a) the number of variables that are linearly related to the outcome $Y$  
+(b) the strength of the relationship between the explanatory variables and the outcome (the signal to noise ratio).
+
+
+Let $k$ represent the number of explanatory variables $X_j$  $j = 1...k$  
+Each explanatory variable is drawn from a Standard Normal distribution $X_i \sim N(0,1)$.  
+Let `k_ln` represent the number of explanatory variables that are linearly
+related to the response variable $Y$. 
+Let `B_mag` represent the magnitude of the population $\beta$ coefficients that are linearly related to the response $Y$.    
+Let $n$ represent the number of observations in the data set  
+The $ith$ observation of the response variable is defined to be \[Y_i = \beta_0 + \beta_1X_{i1} + ... + \beta_kX_{ik} + e_i\] where $e_i \sim N(0,1)$  
+Let $reps$ represent the number of simulations for each combination of parameters.  
+
+For our analysis we set:
+```{r}
+k =20   # 20 explanatory variables
+
+# we explore the cases where there are 0, 1, 5 and 10 variables that are  
+# linearly related to the outcome
+k_ln = c(0,1,5,10)
+
+# we examine the effect of changing the strength of the beta coefficients that  
+# are linearly related to the response Y. 
+B_mag = c(0.01, 0.05, 0.1, 0.5,1,2)
+n = 500  # 500 observations in each dataset
+reps = 100 # 100 repetitions of each case
+    
+```
+
+We generate 100 data sets with 500 observations in each data set for each combination of parameters resulting in $4\times6\times100 = 2400$ simulations
+
+Note that varying the size of the-non zero $\beta$ coefficients changes the signal: noise ratio from $0.01: 2$  
+
+We record the results of the step-wise regression in a data frame named `Results`. Each row in the `Results` data frame represents the results from a step-wise regression for a particular replicate, for a particular combination of parameters.
+
+### Data Generation and stepAIC()
+
+```{r, results= FALSE}
+# set up data frame to record results
+# Rep records the number of the simulation/replicate 1:100
+# N_lin records the number of explanatory variables that are linearly related to the response
+# beta_mag records the strength of the non -zero beta coefficients
+# T1 records the number of variables that were retained incorrectly
+# T2 records the number of variables that were omitted incorrectly
+Results <- expand.grid(Rep   = 1:reps,
+                 No_lin = k_ln, 
+                 beta_mag = B_mag)
+
+                 Results$T1<-rep(0,reps*length(k_ln)*length(B_mag))
+                 Results$T2<-rep(0,reps*length(k_ln)*length(B_mag))
+
+# Set up a list to record the final model chosen by stepAIC for each simulation
+list_models<-vector(mode="list", length=reps*length(k_ln)*length(B_mag))
+
+# For each combinaton of parameters, create the population beta coefficients
+for(j in k_ln) {
+  for(b in B_mag){
+          
+    B <- if(j == 0) rep(0, k) else c(rep(b,j),rep(0,k-j))
+
+    
+# For each simulation and combination of parameters, create the explanatory variables  
+# and response variable and then fit a linear regression model  
+    
+     for(m in 1:reps) {
+# create matrix containing explanatory variables, randomly sampled from a   
+# standard normal disribution  
+        X <- matrix(rnorm(n*k), nrow=n)
+# create response variable Y = BX +Error   
+# (Error sampled randomly from a standard normal distribution)
+        Y  <- X%*%B + matrix(rnorm(n),nrow=n) 
+        DF <- cbind(Y,X) # create dataframe
+        DF<- as.data.frame(DF)
+       # name columns
+      colnames(DF)<-c("Y","X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12",  
+                      "X13","X14","X15","X16","X17","X18","X19","X20")
+      # run linear model
+      full_model <- lm(Y ~ .,data = DF)
+      
+      # perform stepwise regression to choose a model
+      step.model<-stepAIC(full_model, trace=FALSE)
+      
+     
+# To evaluate the performance of stepwise regression we would like to keep  
+# track of the number of variables that were retained incorrectly (T1) and the  
+      #number of variables that were omitted incorrectly (T2). The next section of  
+      # code extracts and records this information.  
+      
+# Extract list of retained variables from model chosen using stepAIC
+# The terms() function extracts terms associated with step.model
+# From this output the term labels are extracted using the attr() function
+      Retained<-attr(terms(step.model),"term.labels")
+      Retained<-as.numeric(gsub("X", "", Retained))
+      
+# Create a vector of length k with 1 in the position of a retained variable  
+      # and 0 in the position of a dropped variable.
+      Vector_step <-rep(0,k)
+      Vector_step <-replace(Vector_step, Retained, 1)
+      
+# Create a vector of length k with 1 in the position of a variable that has a   linear relationship with Y and 0 if it does not
+      Vector_B <- B
+      Vector_B[Vector_B > 0] <- 1
+      
+# Count where the two vectors do not match for variables where there is a linear relationship 
+# and where the two vectors do not match for variables where there is not a linear relationship
+# t1 counts variables incorrectly retained
+# t2 counts variables incorrectly omitted
+      ifelse(j==0, t2<-0, t2 <-length(which(Vector_B[1:j] != Vector_step[1:j])))
+      t1<-length(which(Vector_B[(j+1):k] != Vector_step[(j+1):k]))
+      
+# identify the correct row in which to store the results   
+  h <- which(Results$Rep == m & Results$No_lin == j & Results$beta_mag == b)
+  #collect results in dataframe
+  Results[h,4]<-t1
+  Results[h,5]<-t2
+ 
+
+    # collect chosen models in a list
+    list_models[[h]]<-step.model
+  
+  }
+  }
+}
+```
+Lets examine the first few results:
+
+```{r}
+head(Results)
+```
+The output shows that for the first simulation where no explanatory variables were linearly related to the outcome, eight variables were retained incorrectly in the final model and no variables were incorrectly omitted (this must be the case since no variables were linearly related to the outcome). 
+Note that when `No_lin` = 0, the value of `beta_mag` is irrelevant since all coefficients have the value 0. We will tidy this up at the end.
+
+###Summarising the Results
+
+To get an overview of the performance of the stepAIC() function we can summarise the results by averaging the results over all the simulations for each parameter combination. Specifically, we calculate
+(a) the average number of variables retained incorrectly over all simulations for each combination of parameters 
+(b) the average number of variables omitted incorrectly for each combination of parameters. 
+
+```{r multiple simulations, cache=TRUE}
+# set up summary table to record the results
+summary_table<-expand.grid(No_lin = k_ln, 
+                           beta_mag = B_mag)
+# create a new variable ave_t1 to record the average percentage of incorrectly
+# retained variables
+summary_table$ave_t1<-rep(0,length(summary_table))
+# create a new variable ave_t1 to record the average percentage of incorrectly
+# omitted variables
+summary_table$ave_t2<-rep(0,length(summary_table))
+
+
+# average over each combination of parameters
+for(b in B_mag) {
+  for(j in k_ln){
+
+    #select the results for each combination of parameters
+    t<- filter(Results, Results$No_lin == j & Results$beta_mag == b)
+    # identify the correct row of the summary table to store the results
+    h <- which(summary_table$No_lin == j & summary_table$beta_mag == b)
+    # calculate and recored the averages
+    summary_table[h,3]<-100*sum(t$T1)/(reps*k)
+    summary_table[h,4]<-100*sum(t$T2)/(reps*k)
+    
+    
+  }}
+
+
+print(summary_table)
+```
+
+Recall that that for the simulations where no explanatory variables were linearly related to the response variable (`No_lin` = 0), the value of `beta_mag` is irrelevant since all coefficients have the value 0. Let's average all the results where `No_lin` = 0 and put the results into the first row.
+
+```{r}
+
+    # select the rows where No_lin = 0
+    t<- filter(Results, Results$No_lin == 0)
+    # record the average percentage in the fist row of the table
+    summary_table[1,3]<-100*sum(t$T1)/(reps*k*6)
+    summary_table[1,4]<-100*sum(t$T2)/(reps*k*6)
+    #remove other rows from summary table where No_lin = 0
+    summary_table<-summary_table[-c(5,9,13,17,21),]
+    
+    # replace the value of beta_mag with 0
+    summary_table[1,2]<-0
+    print(summary_table)
+ 
+```
+Please write down a few sentences to summarise the results from these simulations. 
+

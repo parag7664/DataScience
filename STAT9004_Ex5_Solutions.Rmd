@@ -1,0 +1,450 @@
+---
+title: "Exercise Sheet 5 Solutions"
+output: pdf_document
+header-includes:
+   - \usepackage{setspace}
+   - \onehalfspacing
+---
+
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(car)
+```
+
+Q1 It is known that as atmospheric pressure increases, so too does the boiling point of water. The data in the table below gives the boiling point of water and pressure at 12 locations.
+Theory suggests that there is a linear relationship between $\log$(Pressure) and the boiling point of water.
+
+$\log_{10}$(Pressure)$= \beta_{0}+\beta_{1}$Boiling Point
+
+	
+
+(a) Construct scatter plots to show the relationship between Boiling Point and $\log_{10}($Pressure). Comment on the relationships and the level of correlation.
+
+
+```{r, tidy=FALSE, fig.width=3, fig.height=3}
+
+pressure<-c(20.79,	22.67,	22.67,	23.35,	24.02,	24.01,	25.14,	26.57,	27.76,	28.49,
+            29.88,	30.06)
+boiling_point<-c(194.5,	197.9,	198.4,	199.9,	201.4,	201.3,	203.6,	204.6,	208.6,
+                 209.5,	211.9,	212.2)
+
+pvb <- as_tibble(bind_cols(p = pressure, b = boiling_point))
+ggplot(pvb, aes(x = b, y = log10(p))) +
+  geom_point() +
+  labs(x = "Boiling point", y = "log10(Pressure)") +
+  theme_bw()
+```
+
+There is a strong positive linear relationship between Boiling Point$^{\circ} F$ and $\log_{10}$(Pressure) 
+\newpage
+(b) Assuming that a simple linear regression model is appropriate, fit the regression model relating log(Pressure) (y) to the boiling point (x).
+
+By hand:
+
+$SS_{xx}=\sum_{1}^{n}x_{i}^2-\frac{(\sum_{1}^{n}x_{i})^2}{n}$  
+$SS_{xx}=498049.66-\frac{(2443.8)^2}{12}$  
+$SS_{xx}=369.79$
+
+$SS_{xy}=\sum_{1}^{n}xy-\frac{(\sum_{1}^{n}x)(\sum_{1}^{n}y)}{n}$  
+$SS_{xy}=3431.591687-\frac{(2443.8)(16.83424789)}{12}$  
+$SS_{xy}=3.297105$
+
+$\hat{\beta}_{1}=\frac{SS_{xy}}{SS_{xx}}=\frac{3.297105}{369.79}=0.008916$  
+
+$\hat{\beta}_{0}=\bar{y}-\hat{\beta}_{1}\bar{x}$  
+$\hat{\beta}_{0}= 1.402854-0.008915836\times203.65=-0.41286$  
+
+Using the lm function:
+
+```{r}
+model1<-lm(log10(pressure)~ boiling_point)
+summary(model1)
+```
+
+Note that there are small differences due to rounding.
+
+$\log_{10}$(Pressure) = $\hat{\beta}_{0}$+$\hat{\beta}_{1}$Boiling Point  
+$\log_{10}$(Pressure) = `r model1$coefficients[1]`+`r model1$coefficients[2]`Boiling Point
+\newpage
+To intepret the coefficient $\beta_1$ we can say: a one unit increase in boiling point changes $log_{10}$(Pressure) by `r model1$coefficients[2]` units.  
+If we would like to intepret the coefficient in terms of the untransformed variables we can exponentiate:
+$\log_{10}$(Pressure) = $\hat{\beta}_{0}$+$\hat{\beta}_{1}$Boiling Point  
+Pressure$=10^{\hat{\beta}_{0}+\hat{\beta}_{1}Boiling Point}$  
+Pressure$=10^{\hat{\beta}_{0}}\times10^{\hat{\beta}_{1}Boiling Point}$
+
+We see that each 1 unit increase in Boiling Point will increase Pressure by a factor of $10^{0.0089162}=$ `r 10^model1$coefficients[2]`.  
+Therefore, a one unit increase in boiling point increases the Pressure by approximately 2.07%.
+
+
+(c) Produce the analysis of variance table for the regression, and say what conclusions you draw from it.
+
+By hand, we need to calculate $SS_{total}$
+
+$SS_{total}=SS_{yy}=\sum_{1}^{n}y_{i}^2-n\bar{y}^2$  
+$SS_{total}=SS_{yy}=23.6456-12(1.40285399)^2$  
+$SS_{total}=  0.02961$
+
+$SS_{Reg}=\frac{SS_{xy}^2}{SS_{xx}}=\frac{3.297105^2}{369.79}=0.0293975$
+
+```{r}
+summary.aov(model1)
+```
+Note that there are small differences due to rounding.
+
+$H_0: \beta_1=0$  
+$H_A: \beta_1\neq0$ 
+
+Since p < .0.05 we may reject $H_{0}$ at the 5% significance level and conclude that the boiling point variable is explaining a significant amount of the variation in the log(Pressure) variable.
+
+(d) Using relevant information from the ANOVA table, find the value of the correlation coefficient.
+
+```{r}
+R_squared<-0.029397/(0.029397+0.000225)
+sqrt(R_squared)
+```
+\newpage
+(e) Calculate the residuals for the fitted model.
+
+
+```{r}
+res<-residuals(model1)
+res
+```
+
+(f) Calculate an estimate for the error variance $\sigma^2$.
+
+```{r}
+sigma_hat<-sqrt(sum(res^2)/(length(res)-2))
+sigma_hat
+```
+
+(g) Find 95% confidence limits for the slope and the intercept.
+
+Calculations:
+For the slope
+
+$\hat\beta_{1}$$\pm$$t_{\frac{\alpha}{2},n-2}$s.e.($\hat\beta_{1}$)  
+`r model1$coefficients[2]`$\pm$$t_{\frac{0.05}{2},12-2}$$\frac{\hat\sigma}{\sqrt{SS_{xx}}}$  
+`r model1$coefficients[2]`$\pm$$t_{\frac{0.05}{2},10}$$\frac{0.004748584}{\sqrt{369.79}}$  
+`r model1$coefficients[2]`$\pm$ `r qt(0.975, df=10)` $0.0002469372$  
+[0.00836599, 0.00946641]
+
+For the intercept
+
+$\hat\beta_{0}$$\pm$$t_{\frac{\alpha}{2},n-2}$s.e.($\hat\beta_{0}$)  
+`r model1$coefficients[1]` 
+$\pm$$t_{\frac{0.05}{2},12-2}$$\hat\sigma$$\sqrt{\frac{1}{n}+\frac{\bar{x}^2}{SS_{xx}}}$  
+`r model1$coefficients[1]` $\pm$$t_{\frac{0.05}{2},12-2}$$0.004748584\sqrt{\frac{1}{12}+\frac{203.65^2}{369.79}}$  
+`r model1$coefficients[1]` $\pm$ `r qt(0.975, df=10)` $ 5.030745$  
+[-0.52501278, -0.3008288]
+
+Using R:
+
+```{r}
+
+confint(model1, 'boiling_point', level=0.95)
+confint(model1, '(Intercept)', level=0.95)
+
+
+```
+
+
+(h) Find 95% confidence limits for the mean log(Pressure) when the boiling point is 201 degrees F
+
+When the boiling point is 201 degrees F, $x_0=201$ the fitted value is:
+
+$\log$(Pressure) = `r model1$coefficients[1]`+`r model1$coefficients[2]`Boiling Point  
+$\log$(Pressure) = `r model1$coefficients[1]`+`r model1$coefficients[2]`$\times201$  
+$\log$(Pressure) = 1.379235
+
+Then:
+
+$\hat\beta_{0}+\hat\beta_{1}x_0$$\pm$$t_{\frac{\alpha}{2},n-2}$s.e.($\hat\beta_{0}+\hat\beta_{1}x_0$)  
+$1.379235\pm$$t_{\frac{\alpha}{2},n-2}$$\hat\sigma$$\sqrt{\frac{1}{n}+\frac{(x_0-\bar{x})^2}{SS_{xx}}}$  
+$1.379235\pm$$t_{\frac{\alpha}{2},n-2}$$0.004748584\sqrt{\frac{1}{12}+\frac{(201-203.65)^2}{369.79}}$  
+$1.379235\pm$ `r qt(0.975, df=10)` 0.001518982
+[1.37585, 1.38262]
+
+Using R:
+```{r}
+predict(model1, newdata=data.frame(boiling_point=201),interval="confidence", se.fit=TRUE)
+```
+
+(i) What is the predicted value for Pressure when Boiling Point is 201 degrees F?
+
+when Boiling Point = 201, log(Pressure) is estimated to be 1.379235, therefore the value of Pressure is:
+
+$\log(Pressure)=1.379235$
+$Pressure=10^{1.379235}=23.94611$)
+\newpage
+
+
+Q.2
+A sales company has recorded the number of hours training that each member of staff has received along with their sales figures (€000) (sales) from the past six weeks. A model of the following form was fitted to the data. 
+	
+$y_i= \beta_{0}+\beta_{1}x_i+e_i$
+
+Where $e_i~N(0,\sigma^2)$, $x$ represents the number of hours training (training) and y represents the sales figures (sales).
+Use the output shown in Figure 1 to answer the questions below.
+
+(i) Please write down and interpret the estimate for $\beta_1$  
+$\hat\beta_1=2.6234$  
+For every additional hour of training the expected sales figure increases by €2623.4.  
+
+(ii) Test the hypothesis that there is an association between training and sales and state the implication of the result for the model. Please state the test statistic and the associated p-value. 
+
+
+$H_0: \beta_1=0$  
+$H_A: \beta_1\neq0$ 
+
+$t = 4.97$ or $F = 24.71$ and p = 0.000139.  
+Since the p-value associated with the slope < 0.05 reject the null hypothesis and conclude that the slope is not equal to 0. 
+This result indicates that hours of training is of value in predicting sales figures. 
+
+
+(iii) Estimate the mean sales figure for an individual that has received 15 hours of training. 
+
+$\hat{y}= 5.199 + 2.6234\times15 = 44.55=$€44,550
+   
+ \newpage     
+      
+Q3. 	An estate agent has recorded the area of a house (00s square feet) and the corresponding selling price (€000). A model of the following form was fitted to the data. 
+	
+$y_i= \beta_{0}+\beta_{1}x_i+e_i$
+
+Where $e_i~N(0,\sigma^2)$, $x$ represents the area of the house (area) and y represents the selling price (price).
+Use the output shown in Figure 1 to answer the questions below.
+
+
+(a) Please write down and interpret the estimate for $\beta_{1}$.
+
+$\hat\beta_1=4.7529$ 
+
+For every additional 100 square feet in area, the expected selling price of a house increases by €4752.9.
+
+(b) Test the hypothesis that there an association between area and selling price and state the implication of the result for the model.
+
+$H_0: \beta_1=0$  
+$H_A: \beta_1\neq0$ 
+
+Since $F_{calc}= 205.5$ and $p<0:001$ we may reject $H_0$ and conclude that the data supports the alternative hypothesis that the slope is not equal to 0. There is an association between the area of a house and the selling price of a house.
+
+(c) Estimate the selling price for a house that is 2050 square feet. 
+
+$\hat{y}= 49.6002 + 4.7529\times20.5 = 147:0346= €147,034.6$
+
+(d) Write down an estimate for the error variance ($\sigma^2$).  
+$\hat{\sigma^2}= 9.491^2= 90.07908$  (taken from the output)
+
+(e) Write down and interpret the coefficient of determination.
+
+$R^2= 0.5813$  
+The variable area explains 58.13% of the variation in selling price.
+
+(f) Write down the and interpret the estimate for $\beta_{0}$. 
+Is the predicted sellingprice when $x= 0$ valid? Please justify your answer.
+
+$\beta_0= 49.6002$  
+When the area is 0, the predicted selling price is €49600.  
+This prediction is not valid since is falls outside the range of observed data.
+
+\newpage
+Q4.
+
+An experiment to determine the elimination rate of a new therapeutic drug was conducted. After administering the drug, the concentration of the drug in blood samples was measured at 30 minute intervals. The results are shown in the table below. You will need to enter analyse this data using R.
+
+```{r}
+minutes<-c(30,	60,	90,	120,	150,	180,	210,	240)
+concentration<-c(42.1,	38.2,	37.2,	35.5,	21.0,	20.5,	16.1,	4.1)
+```
+
+(i)	Use R to construct a scatter plot for these data, and comment on the level of correlation. 
+
+```{r}
+plot(concentration~minutes, xlab="minutes after dose", ylab="concetration of drug")
+```
+
+There is a negative linear relationship between minutes after dose and concentration of drug.
+
+(ii) Find the equation of the regression line of Concentration on Minutes After Dose.  
+
+
+```{r}
+model2<-lm(concentration ~ minutes)
+summary(model2)
+```
+
+
+$concentration = $\hat{\beta}_{0}$+$\hat{\beta}_{1}$minutes  
+$concentration = `r model2$coefficients[1]`+`r model2$coefficients[2]`minutes
+
+
+(iii)	Please write down and interpret the estimate for the slope.
+
+$\hat\beta_1=$`r model2$coefficients[2]`  
+For every additional minute, the expected concentration of drug in the bloodstream decreases by -0.17504 $\mu g/mL$.
+
+	
+(iv) Test the hypothesis that there is an association between Minutes after Dose and Concentration. State the implication of the result for the model.
+
+$H_0: \beta_1=0$  
+$H_A: \beta_1\neq0$ 
+
+Since $F_{calc}= 74.84$ and $p<0.001$ we may reject $H_0$ and conclude that the data supports the alternative hypothesis that the slope is not equal to 0. There is an association between the minutes after dose and the concentration of the drug.
+
+\newpage
+(v) Estimate the Concentration 80 minutes after the dose was administered.
+
+$\hat{y}=  50.46786  -0.17504\times80$
+
+```{r}
+predict(model2, newdata=data.frame(minutes=80),interval="confidence", se.fit=TRUE)
+```
+	
+(vi) Write down an estimate for the error variance ($\sigma^2$).
+$\hat{\sigma^2}=  3.934^2= 15.47636$  (taken from the output)
+
+
+(vii) Write down and interpret the coefficient of determination.
+
+$R^2= 0.9258$ 
+The variable minutes explains 92.58% of the variation in concentration.
+
+
+(viii) Find 95% confidence limits for the mean concentration of the drug 100 minutes after the dose was administered. 
+
+```{r}
+predict(model2, newdata=data.frame(minutes=100),interval="confidence", se.fit=TRUE)
+```
+
+\newpage
+Q5  
+
+The Clausius-Clapeyron equation states that the vapour pressure of water $P_v$ is related to the temperature by the equation  $ln(P_v)=\beta_0 +\beta_1 \frac{1}{T}$.  An experiment to investigate this relationship recorded the vapour pressure of water (mm Hg) for a variety of temperatures (K).  The results are available in the Pressure.xlsx Excel file available on Canvas.
+
+
+(a) Visualise and summarise the data  
+```{r, tidy=FALSE, fig.width=3, fig.height=3}
+
+Pressure<-read_xlsx("Pressure.xlsx")
+
+
+ggplot(Pressure, aes(x = Temperature, y = P)) +
+  geom_point() +
+  labs(x = "Temperature", y = "Pressure") +
+  theme_bw()
+```
+
+```{r, tidy=FALSE, fig.width=3, fig.height=3}
+
+hist(Pressure$Temperature, main = "", xlab="Temperature")
+hist(Pressure$P, main = "", xlab="Pressure")
+```
+
+
+There is a non linear relationship between Temperature $^{\circ} F$ and Pressure.  
+Let's transform the variables Pressure and Temperature to see whether there is a linear relationship between the transformed variables.
+```{r, tidy=FALSE, fig.width=3, fig.height=3}
+
+
+ggplot(Pressure, aes(x = 1/Temperature, y = log(P))) +
+  geom_point() +
+  labs(x = "1/Temperature", y = "log(Pressure)") +
+  theme_bw()
+  
+```
+
+(b) Fit a model of the form $ln(P_v)=\beta_0 +\beta_1 \frac{1}{T}+e$. Report the fitted model and interpret the value of $\beta_1$. 
+
+
+```{r}
+# create a new variable called T that contains the values 1/Temperature
+Pressure$T<-1/Pressure$Temperature
+  
+# fit the model
+model3<-lm(log(P)~ T, data=Pressure)
+summary(model3)
+```
+
+
+$log$(Pressure) = $\hat{\beta}_{0}$+$\hat{\beta}_{1}\frac{1}{T}$  
+$log$(P) = `r model3$coefficients[1]``r model3$coefficients[2]`$\frac{1}{T}$
+
+The intepretation is not particularly meaningful with the transformed variables:
+A one unit increase in $\frac{1}{Temperature}$ corresponds to a change of `r model3$coefficients[2]` units in log (Pressure).
+
+
+(c) Calculate a 95% confidence interval for the $\beta_1$ coefficient.
+
+
+```{r}
+confint(model3)
+```
+
+(d) Test the hypothesis:  
+$H_0: \beta_1=0$  
+$H_A: \beta_1\neq0$  
+What do the results of the hypothesis test imply for the regression model?
+
+```{r}
+summary.aov(model3)
+```
+
+
+Since p < .0.05 we may reject $H_{0}$ at the 5% significance level and conclude that the variable $\frac{1}{T}$ is explaining a significant amount of the variation in the log(Pressure) variable.
+
+(e) Plot the regression line onto a scatterplot of the data and plot a 95% prediction band.
+```{r, tidy=FALSE}
+
+#create a sequence of values for the explanatory variable (x)
+Temp_grid = seq(min(Pressure$T), max(Pressure$T), by = 0.00001)
+
+## create a set of 95% confidence intervals at each point in Temp_grid
+dist_ci_band = predict(model3, 
+                       newdata = data.frame(T = Temp_grid), 
+                       interval = "confidence", level = 0.95)
+## create a set of 95% prediction intervals at each point in Temp_grid
+dist_pi_band = predict(model3, 
+                       newdata = data.frame(T = Temp_grid), 
+                       interval = "prediction", level = 0.95) 
+
+## plot scatter graph of 1/T against log(P)
+plot(log(P) ~ T, data=Pressure, xlab = "1/Temperature",  ylab = "log(Pressure)",  pch  = 20,
+     cex  = 0.75, ylim = c(min(dist_pi_band), max(dist_pi_band)))
+
+## add regression line    
+abline(model3)
+
+## plot confodence and prediction bands
+lines(Temp_grid, dist_ci_band[,"lwr"], col = "blue", lwd = 1, lty = 2)
+lines(Temp_grid, dist_ci_band[,"upr"], col = "blue", lwd = 1, lty = 2)
+lines(Temp_grid, dist_pi_band[,"lwr"], col = "red", lwd = 1, lty = 3)
+lines(Temp_grid, dist_pi_band[,"upr"], col = "red", lwd = 1, lty = 3)
+
+  
+```
+
+
+(f) Plot the residuals against the fitted values and identify any outliers.
+
+```{r}
+stdres <- rstandard(model3)
+
+plot(stdres~fitted(model3), xlab = "log(P) (fitted values)", ylab =" standardised residuals")
+abline(0,0)
+```
+
+Observation 6 has a large residual.
+
+(g) Report whether the assumptions of linear regression are satisfied.
+
+```{r}
+plot(model3)
+
+```
+
+Looking at the plot of the residuals vs fitted values, there are no obvious patterns so the assumptions that the error terms are i.i.d with a constant variance are satisfied.  
+The qq plot appears to follow a straight line (with the exception of the outlier idenitified in part (f)) indicating that the assumption of normality has been satisfied.  
+The plot showing leverage vs standardised residuals indicates that although observation 6 is an outlier, it is not influential.

@@ -1,0 +1,46 @@
+Hi all this is parag soni from group number 6 As part of the assignment 1 - part 2 
+We are 4 people in this group includeing me and members Mayna Onam raman
+
+We have divided the presentation in 3 parts namely 
+1. Introduction - describing the purpose of presentation
+2. Checklist created to critique Paper 
+3. conclusion which will cover the final judgement on entire research paper.
+
+We are presenting a presentation
+critiquing the recent published research paper named "Machine learning-based in-hospital 
+mortality prediction models for patients with acute coronary syndrome". and the purpose of this is to 
+evaluate the chosen research paper based on the checklist created in part 1 of assignment.
+
+Checklist is listed below and I will be covering 
+sections Aim of model and literature review of the presentation. 
+
+Aim of the model is to identify the risk factors of in-hospital mortality in 
+patients with acute coronary syndrome (ACS) and to evaluate the 
+performance of traditional regression and machine learning prediction models.
+
+Researcher has clearly descibed the Aim of the model in the paper 
+and has listed out all the mandatory details.
+Like 1. using univariate and multivariate logistic regression analysis for Identifying risk factors based on the data that can assist  acute coronary syndrome(ACS) patients.
+
+2. Defining a binary classification variable that indicates how serious a patient's health is.
+
+3. researcher used multiple models to assess the outcome with Logistic Regression as baseline model and ML models like GBDT, SVM, Random Forest, also
+evaluated the performance of each model by calculating sensitivity, specificity ,and receiver operating characteristic curve
+
+4. researcher clearly defined the population setting for the predictive models.
+
+5. Even though No calculation conducted for the sample size but 
+ensured it still matches the minimum requirement sample size to develop prediction models which is 10 events for each predictor parameter.
+
+Thats for Introduction 
+Moving to Literature review.
+
+1. so The author here had considered and referenced a wide range of new and historical articles  as well as other publications and tried to make a clear difference as
+where this Paper fills the gap too and have mentioned the pros and cons too.
+Like those publications mainly focused on single risk factor predictors .
+
+2. there is no common ground for paper selection, Because the predicted mortality rate period varies from 30-day death to 2-year mortality, .
+
+3. only thing that we find wrong is that The author compared the findings of the study with those of other published studies in the later part of this report,
+ which could have been done in the first section, where the novelty of the article have been addressed.
+
