@@ -1,0 +1,6 @@
+data()
+AirPassengers	# dataset
+s=summary(AirPassengers);s  ##Summary statistics of data
+s[1]		# Gives value and measure (min)
+as.numeric(s[1])	# Gives just value (you can use for further operations)
+as.numeric(s[c(1,2)])

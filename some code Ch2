@@ -1,0 +1,89 @@
+?while
+x=NULL
+n=10
+for(i in 1:n){x=c(x,i)}
+x
+
+
+x=CO2
+x[1:10,]
+CO2$conc
+attach(CO2)
+conc
+detach(CO2)
+conc
+
+order(conc)
+sort(conc)
+
+
+
+x
+plot(x, type='l')
+xx = diff(x, lag=1)
+x11()
+plot(xx, type='l')
+?diff
+quantile(x)
+quantile(x, probs = seq(0, 1, 0.05))
+?matplot
+
+dotchart(CO2[,-c(1:3)])
+CO2[,-c(1:3)]
+is(CO2[,-c(1:3)])
+xx=as.numeric(CO2[,-c(1:3)])
+?stem
+sort(x)
+order(x)
+
+?glob2rx
+
+stopifnot(glob2rx("abc.*") == "^abc\\.",
+          glob2rx("a?b.*") == "^a.b\\.",
+          glob2rx("a?b.*", trim.tail = FALSE) == "^a.b\\..*$",
+          glob2rx("*.doc") == "^.*\\.doc$",
+          glob2rx("*.doc", trim.head = TRUE) == "\\.doc$",
+          glob2rx("*.t*")  == "^.*\\.t",
+          glob2rx("*.t??") == "^.*\\.t..$",
+          glob2rx("*[*")  == "^.*\\["
+)
+
+USArrests[1,][1]=50 
+USArrests[1,][2]=50 
+USArrests[1,][3]=50 
+USArrests[1,][4]=50 
+hc <- hclust(dist(USArrests), "ave") 
+plot(hc)
+?prcomp
+
+
+hclust(dist(USArrests), ”ave”) 
+
+
+## signs are random
+require(graphics)
+## the variances of the variables in the
+## USArrests data vary by orders of magnitude, so scaling is appropriate
+prcomp(USArrests)  # inappropriate
+prcomp(USArrests, scale. = TRUE)
+prcomp(~ Murder + Assault + Rape, data = USArrests, scale. = TRUE)
+plot(prcomp(USArrests))
+summary(prcomp(USArrests, scale. = TRUE))
+biplot(prcomp(USArrests, scale. = TRUE))
+
+biplot(prcomp(USArrests, scale. = FALSE))
+
+xx = iris[,1:4]
+xx
+prcomp(xx)  # inappropriate
+prcomp(xx, scale. = TRUE)
+par(mfrow=c(1,2))
+plot(prcomp(xx))
+plot(prcomp(xx, scale. = TRUE))
+
+summary(prcomp(xx))
+summary(prcomp(xx, scale. = TRUE))
+
+biplot(prcomp(xx), main="RAW DATA")
+biplot(prcomp(xx, scale. = TRUE), main="SCALED DATA")
+
